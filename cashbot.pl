@@ -17,16 +17,22 @@ sub notice {
     }
 
     return $ok unless $sender eq $bot;
+    return $ok if $msg =~ /^:You have purchased/;
 
     my ($mins, $secs) = (0, 0);
-    if ($msg =~ /(\d+)secs/) {
-        $secs = $1;
-        if ($msg =~ /(\d+)mins/) {
-            $mins = $1
-        }
-        my $duration = $mins * 60 + $secs + int rand 60;
-        weechat::hook_timer($duration * 1000, 0, 1, "cash", "");
+# FIXME: might contain mins or secs or both, is there better
+#    way to check?
+    if ($msg =~ /(\d+)mins (\d+)secs/) {
+        ($mins, $secs) = ($1, $2)
     }
+    elsif ($msg =~ /(\d+)secs/) {
+        $secs = $1
+    }
+    elsif ($msg =~ /(\d+)mins/) {
+        $mins = $1;
+    }
+    my $duration = $mins * 60 + $secs + int rand 60;
+    weechat::hook_timer($duration * 1000, 0, 1, "cash", "");
     return $ok
 }
 
@@ -56,16 +62,16 @@ sub buy {
     my $amount = int($dollars / 5000);
     if ($amount > 0) {
 #FIXME: better way to find the channel?
-       my $buffer = weechat::info_get("irc_buffer", "irc.he.net,#gunbuy");
-       weechat::command($buffer, "!buy gun $amount");
+        my $buffer = weechat::info_get("irc_buffer", "he,#gunbuy");
+        weechat::command($buffer, "!buy gun $amount");
     }
-    weechat::hook_timer((120 + int rand 60) * 1000, 0, 1, "cash", "");
+    weechat::hook_timer(int((20 + rand 60) * 1000), 0, 1, "cash", "");
     return $ok
 }
 
 sub cash {
 #FIXME: better way to find the channel?
-    my $buffer = weechat::info_get("irc_buffer", "irc.he.net,#gunbuy");
+    my $buffer = weechat::info_get("irc_buffer", "he,#gunbuy");
     weechat::command($buffer, "\@cash");
     return $ok
 }
